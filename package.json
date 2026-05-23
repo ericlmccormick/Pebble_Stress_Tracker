@@ -1,0 +1,46 @@
+{
+    "author": "Eric McCormick",
+    "dependencies": {},
+    "keywords": [],
+    "name": "stress-tracker",
+    "pebble": {
+        "capabilities": [
+            "health"
+        ],
+        "displayName": "Stress tracker",
+        "enableMultiJS": true,
+        "messageKeys": [],
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "file": "data/exhale.raw",
+                    "name": "exhale",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/inhale.raw",
+                    "name": "inhale",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                },
+                {
+                    "file": "data/hold.raw",
+                    "name": "hold",
+                    "targetPlatforms": null,
+                    "type": "raw"
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "emery"
+        ],
+        "uuid": "67c426df-64c5-4d3e-972b-35b3a1c01d32",
+        "watchapp": {
+            "watchface": false
+        }
+    },
+    "version": "1.0.0"
+}
