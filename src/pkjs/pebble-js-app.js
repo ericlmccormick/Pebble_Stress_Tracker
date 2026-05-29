@@ -1,49 +1,92 @@
-var timelineToken = "";
-
 Pebble.addEventListener('ready', function() {
-  Pebble.getTimelineToken(function(token) {
-    timelineToken = token;
-  }, function(error) {
-    console.log('Error getting timeline token: ' + error);
-  });
+  console.log('PebbleKit JS is ready!');
 });
 
 Pebble.addEventListener('appmessage', function(e) {
   var dict = e.payload;
+  console.log('AppMessage received: ' + JSON.stringify(dict));
   
-  // Verify we received a command to push a pin
-  if (dict['MESSAGE_KEY_PIN_TYPE']) {
-    var pinType = dict['MESSAGE_KEY_PIN_TYPE'];
-    var score = dict['MESSAGE_KEY_SCORE'];
-    var rhr = dict['MESSAGE_KEY_RHR'];
+  try {
+      // Safely pull the data using the exact package.json string or integer ID
+      var rawPinType = dict['PIN_TYPE'] !== undefined ? dict['PIN_TYPE'] : dict[104];
+      var rawScore = dict['SCORE'] !== undefined ? dict['SCORE'] : dict[105];
+      var rawRhr = dict['RHR'] !== undefined ? dict['RHR'] : dict[106];
+      
+      if (rawPinType !== undefined) {
+        
+        var score = Number(rawScore);
+        var rhr = Number(rawRhr);
+        
+        console.log('Processing Event -> Score: ' + score + ' RHR: ' + rhr);
+        
+        var titleText = "Heart Rate Event";
+        var bodyText = "Average HR: " + rhr + " BPM\nStress Score: " + score + "/100";
     
-    var pinDate = new Date();
-    // Schedule the pin 1 minute in the future so it appears right at the top of the timeline
-    pinDate.setMinutes(pinDate.getMinutes() + 1); 
-
-    var pin = {
-      "id": "stress-sense-" + Math.round((new Date()).getTime() / 1000),
-      "time": pinDate.toISOString(),
-      "layout": {
-        "type": "genericPin",
-        "title": pinType === 1 ? "Morning Readiness" : "High Stress Detected",
-        "tinyIcon": "system://images/HEART_RATE_MONITOR",
-        "body": pinType === 1 ? 
-                "Score: " + score + "/100\nResting HR: " + rhr + " BPM\nGreat time for a workout!" : 
-                "Stress Score: " + score + "/100\nConsider a 5-minute breathing session to lower your baseline."
+        // 1. Force native popup locally via Bluetooth (Immediate feedback)
+        Pebble.showSimpleNotificationOnPebble(titleText, bodyText);
+    
+        // 2. Build Timeline Pin according to strict API Schema
+        var pinDate = new Date();
+        var pin = {
+          "id": "hr-alert-" + Math.round(pinDate.getTime() / 1000),
+          "time": pinDate.toISOString(),
+          "layout": {
+            "type": "genericPin",
+            "title": titleText,
+            "tinyIcon": "system://images/NOTIFICATION_GENERIC", // Strict Whitelist Icon
+            "body": bodyText
+          }
+        };
+    
+        // 3. Fetch Token and push to the stable Rebble endpoint
+        Pebble.getTimelineToken(
+            function(token) {
+                console.log('Token acquired: ' + token);
+                var req = new XMLHttpRequest();
+                req.open('PUT', 'https://timeline-api.rebble.io/v1/user/pins/' + pin.id, true);
+                req.setRequestHeader('Content-Type', 'application/json');
+                req.setRequestHeader('X-User-Token', token);
+                
+                req.onload = function() {
+                  console.log('Timeline API responded with status: ' + req.status);
+                };
+                req.onerror = function() {
+                  console.log('Error: Timeline API connection failed.');
+                };
+                
+                req.send(JSON.stringify(pin));
+            }, 
+            function(error) { 
+                console.log('Error getting timeline token. Do you have "timeline" in capabilities? Error: ' + error); 
+            }
+        );
       }
-    };
-
-    pushPin(pin);
+  } catch (err) {
+      console.log('CRITICAL JS ERROR in appmessage listener: ' + err.message);
   }
 });
 
-// Pushes the formatted pin directly to the timeline servers
-function pushPin(pin) {
-  if (!timelineToken) return;
-  var req = new XMLHttpRequest();
-  req.open('PUT', 'https://timeline-api.rebble.io/v1/user/pins/' + pin.id, true);
-  req.setRequestHeader('Content-Type', 'application/json');
-  req.setRequestHeader('X-User-Token', timelineToken);
-  req.send(JSON.stringify(pin));
-}
+Pebble.addEventListener('showConfiguration', function() {
+  var url = 'https://cdn.rawgit.com/pebble-examples/slate-config-example/master/config/index.html';
+  var bgScanEnabled = localStorage.getItem('bgScanEnabled') !== 'false'; 
+  Pebble.openURL(url + '?bg_scan=' + bgScanEnabled);
+});
+
+Pebble.addEventListener('webviewclosed', function(e) {
+  if (e.response) {
+    var configData = JSON.parse(decodeURIComponent(e.response));
+    localStorage.setItem('bgScanEnabled', configData.bg_scan);
+    
+    var enabledInt = configData.bg_scan ? 1 : 0;
+    var dict = { 
+        'BG_SCAN_ENABLED': enabledInt,
+        103: enabledInt
+    };
+    
+    Pebble.sendAppMessage(dict, function() {
+        console.log("Settings sent successfully");
+    }, function() {
+        console.log("Settings failed to send");
+    });
+  }
+});
