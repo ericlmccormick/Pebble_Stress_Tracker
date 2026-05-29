@@ -6,7 +6,8 @@
     "pebble": {
         "capabilities": [
             "configurable",
-            "health"
+            "health",
+            "timeline"
         ],
         "displayName": "Stress tracker",
         "enableMultiJS": true,
