@@ -1,31 +1,27 @@
 {
     "author": "Eric McCormick",
-    "dependencies": {},
+    "dependencies": {
+        "pebble-clay": "^1.0.4"
+    },
     "keywords": [],
-    "name": "stress-tracker",
+    "name": "vitalgauge",
     "pebble": {
         "capabilities": [
-            "configurable",
-            "health",
-            "timeline"
+            "health"
         ],
-        "displayName": "Stress tracker",
+        "displayName": "VitalGauge - Advanced Health Monitor ",
         "enableMultiJS": true,
         "messageKeys": [
             "BG_SCAN_ENABLED",
             "PIN_TYPE",
             "SCORE",
-            "RHR"
+            "RHR",
+            "READINESS",
+            "WAS_SLEEPING"
         ],
         "projectType": "native",
         "resources": {
             "media": [
-                {
-                    "file": "images/icon_48.png",
-                    "name": "IMAGE_MENU_ICON",
-                    "targetPlatforms": null,
-                    "type": "bitmap"
-                },
                 {
                     "file": "data/exhale.raw",
                     "name": "exhale",
@@ -43,6 +39,13 @@
                     "name": "hold",
                     "targetPlatforms": null,
                     "type": "raw"
+                },
+                {
+                    "file": "images/25.png",
+                    "menuIcon": true,
+                    "name": "logo",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
                 }
             ]
         },
@@ -55,5 +58,5 @@
             "watchface": false
         }
     },
-    "version": "1.1.0"
+    "version": "2.1.0"
 }
